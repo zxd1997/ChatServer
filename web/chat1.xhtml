@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Online Chat Room</title>
+    <style type="text/css">
+        input#chat {
+            width: 410px
+        }
+		#tips{
+			margin-top:0;
+			margin-bottom:5px;
+			font-size:20px;
+		}
+        #console-container {
+            width: 550px;
+            float:left;
+        }
+        #console {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 200px;
+            overflow-y: scroll;
+            padding: 5px;
+            width:400px;
+            float:left;
+        }   
+        #online{
+       		float:right;
+        	height:20px;
+        	margin-right:35px;
+        	margin-top:0;
+        	margin-bottom:0;
+        	color:red;
+        }
+         #console1 {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 190px;
+            overflow-y: scroll;
+            padding: 0px;
+            width: 110px;
+            float:right;
+            font-size:13px;
+        }
+		#box1{
+            float:right;
+		}
+		#tips1{
+			margin-bottom:5px;
+		}
+        #console p {
+            padding: 0;
+            margin: 0;
+        } 
+        #submit{
+        	width:75px;
+        }
+        #register{
+        	width:75px;
+        }
+        #username{
+        	width:150px;
+        }
+        #password{
+        	width:150px;
+        }
+        #console2 {
+            clear:both;
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 200px;
+            overflow-y: scroll;
+            padding: 5px;
+            width:400px;
+            margin-right:5px;
+            margin-left:5px;
+            margin-bottom:0;
+        }
+        #box2{
+        	clear:both;
+            border: 1px solid #CCCCCC;
+            border-color: #4169E1;
+        	float:right;
+        	visibility:hidden;
+        }
+        #chat1 {
+            width: 352px;
+            height:40px;
+            margin-bottom:10px;
+            margin-left:5px;
+        }
+        #tmp{
+        	float:right;
+        	width:600px;
+        }
+        #service{
+        	float:left;
+        }
+        #pannel{
+       		float:right;
+        }
+        #btn{
+        	height:40px;
+        	width:53px;
+        }
+        #services{
+        	margin-bottom:5px;
+        	margin-top:5px;
+        	margin-left:5px;
+        	float:left;
+        }
+        #close{
+        	float:right;
+        	font-size:30px;
+        	margin-right:10px;
+        	margin-top:0;
+        }
+        #close1{
+        	float:right;
+        	font-size:30px;
+        	margin-right:10px;
+        	margin-top:0;
+        	visibility:hidden;
+        }
+        #call{
+       		float:right;
+       		height:33px;
+        }
+        #response{
+        	display:none;
+            float:right;
+       		height:33px;
+        }
+        #1{
+        	float:left;
+        	margin:0;
+        }
+        #ser{
+        	clear:both;
+        }
+        #servicelist{
+        	display:none;
+        }
+    </style>
+    <script type="application/javascript"><![CDATA[
+        "use strict";
+		
+        var Chat = {};
+		
+        Chat.socket = null;
+
+        Chat.connect = (function(host) {
+            if ('WebSocket' in window) {
+                Chat.socket = new WebSocket(host);
+            } else if ('MozWebSocket' in window) {
+                Chat.socket = new MozWebSocket(host);
+            } else {
+                Console.log('Error: WebSocket is not supported by this browser.');
+                return;
+            }
+
+            Chat.socket.onopen = function () {
+                Console.log('Info: WebSocket connection opened.');
+                document.getElementById('chat').onkeydown = function(event) {
+                    if (event.keyCode == 13) {
+                        Chat.sendMessage();
+                    }
+                };
+            };
+
+            Chat.socket.onclose = function () {
+                document.getElementById('chat').onkeydown = null;
+                Console.log('Info: WebSocket closed.');
+            };
+
+            Chat.socket.onmessage = function (message) {
+            	var s=message.data;
+            	if (s.indexOf("you need help")!=-1){
+            		t4();
+            	}
+            	if (s.indexOf("Servicelist")!=-1){
+            		document.getElementById("servicelist").innerHTML=s.substring(11);
+            	}else if (s.indexOf("you are VIP")!=-1){
+            		t5();
+            	}else if (s.indexOf("Services")!=-1){
+            		Console2.log(s.substring(8));
+            	}else 
+            	if (s.indexOf("online")!=-1){
+            		document.getElementById("console1").innerHTML=s.substring(6);
+            	}else{ 
+            		if((s.indexOf("logged")!=-1)||(s.indexOf("registered")!=-1)){
+            			document.all["box1"].style.display="none"; 
+            		}
+            	Console.log(s);
+            	}
+            };
+        });
+
+        Chat.initialize = function() {
+            if (window.location.protocol == 'http:') {
+                Chat.connect('ws://' + window.location.host + '/chat/websocket/chat');
+            } else {
+                Chat.connect('wss://' + window.location.host + '/chat/websocket/chat');
+            }
+        };
+
+        Chat.sendMessage = (function() {
+            var message = document.getElementById('chat').value;
+            if (message != '') {
+                Chat.socket.send(message);
+                document.getElementById('chat').value = '';
+            }
+        });
+        
+        var Console = {};
+
+        Console.log = (function(message) {
+            var console = document.getElementById('console');
+            var p = document.createElement('p');
+            p.style.wordWrap = 'break-word';
+            p.innerHTML = message;
+            console.appendChild(p);
+            while (console.childNodes.length > 25) {
+                console.removeChild(console.firstChild);
+            }
+            console.scrollTop = console.scrollHeight;
+        });
+		
+        var Console2 = {};
+
+        Console2.log = (function(message) {
+            var console = document.getElementById('console2');
+            var p = document.createElement('p');
+            p.style.wordWrap = 'break-word';
+            p.innerHTML = message;
+            console.appendChild(p);
+            while (console.childNodes.length > 25) {
+                console.removeChild(console.firstChild);
+            }
+            console.scrollTop = console.scrollHeight;
+        });
+        Chat.initialize();
+
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Remove elements with "noscript" class - <noscript> is not allowed in XHTML
+            var noscripts = document.getElementsByClassName("noscript");
+            for (var i = 0; i < noscripts.length; i++) {
+                noscripts[i].parentNode.removeChild(noscripts[i]);
+            }
+        }, false);
+		function send(){
+        	var message = document.getElementById('chat').value;
+            if (message != '') {
+                Chat.socket.send(message);
+                document.getElementById('chat').value = '';
+            }
+        }
+		function t1(){
+			if (document.getElementById("username").value=='') {alert("please enter your username")}
+			else if (document.getElementById("password").value==''){alert("please enter your password")}
+			else{
+			Chat.socket.send("loginusername"+document.getElementById("username").value+"password"+document.getElementById("password").value);}
+		}
+		function t2(){
+			if (document.getElementById("username").value=='') {alert("please enter your username")}
+			else if (document.getElementById("password").value==''){alert("please enter your password")}
+			else{
+			Chat.socket.send("registerusername"+document.getElementById("username").value+"password"+document.getElementById("password").value);}
+		}
+		function t3(){
+			document.getElementById("call").style.display="none";
+			document.all["box2"].style.visibility="visible"; 
+			Chat.socket.send("ask for services");
+		}
+		function close1(){
+			document.all["box2"].style.visibility="hidden";
+			document.getElementById("call").style.display="";
+			Chat.socket.send("end of services")
+		}
+		function send1(){
+			var message = document.getElementById('chat1').value;
+            if (message != '') {
+                Chat.socket.send("Services"+message);
+                document.getElementById('chat1').value = '';
+            }
+		}
+		function t4(){
+			document.all["box2"].style.visibility="visible"; 
+			document.getElementById("close").style.display="none";
+			document.getElementById("close1").style.visibility="visible";
+			document.getElementById("response").style.display="none";
+			document.getElementById("servicelist").style.display="inline";	
+		}
+		function t5(){
+			document.getElementById("call").style.display="none";
+			document.getElementById("response").style.display="inline";
+		}
+		function close2(){
+			document.all["box2"].style.visibility="hidden";
+			document.getElementById("close1").style.visibility="hidden";
+			document.getElementById("close").style.display="inline";
+			document.getElementById("response").style.display="inline";
+		}
+    ]]></script>
+</head>
+<body>
+<div class="noscript"><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websockets rely on Javascript being enabled. Please enable
+    Javascript and reload this page!</h2></div>
+
+<div id="console-container">
+  
+        <input type="text" placeholder="type and press enter to chat" id="chat" />
+        <input type="button" value="send" onclick="send();"/>
+    <p id="tips">If you want to talk to somebody, just input To(somebody):message</p>
+        <div id="console"/>
+        <h4 id="online">Online List</h4>
+        <div id="console1"/>
+   
+    </div>    	
+        
+    <div id="box1">
+    	<p id="tips1">Please enter your nickname/password below to log in/register</p>
+    	<div id="pannel">
+    	<input type="text" placeholder="type your username here" id="username"/>
+    	<br></br>
+    	<input type="text" placeholder="type your password here" id="password"/>
+    	<br></br>
+    	<input type="button" value="login" id="submit" onclick="t1();"/>
+    	<input type="button" value="register" id="register" onclick="t2();"/>
+    	</div>
+    </div>
+    <div id="ser">
+    <h4 id="1">if you need help, press the OnlineServices button</h4>
+    <input type="button" value="OnlineServices" id="response" onclick="t4()"/>
+    <input type="button" value="OnlineServices" id="call" onclick="t3()"/>
+    <h4 id="1">if you are services, press the OnlineServices button to offer help(need login your services account)</h4>
+    <br></br>
+    </div>
+    <div id="tmp">
+    <div id="box2">
+    	<div>
+    	    <h2 id="services">Online Services</h2>
+    		<a id="close" onclick="close1()">x</a>
+    		<a id="close1" onclick="close2()">x</a>
+    	</div>
+    	<div id="console2"></div><br></br>
+        <input type="text" placeholder="type and press enter to chat" id="chat1" />
+        <input type="button" id="btn" value="send" onclick="send1();" /><br></br>
+        
+    <div id="servicelist"></div>
+    </div>
+    </div>
+</body>
+</html>
