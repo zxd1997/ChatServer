@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ServerEndpoint(value = "/chat")
 public class ChatAnnotation {
 
-    private static final String GUEST_PREFIX = "Guest";
+    private static final String GUEST_PREFIX = "emmm";
     private static final AtomicInteger connectionIds = new AtomicInteger(0);
     private static final Set<ChatAnnotation> connections =
             new CopyOnWriteArraySet<>();
@@ -35,7 +35,7 @@ public class ChatAnnotation {
     private Session session;
 
     public ChatAnnotation() {
-        nickname = GUEST_PREFIX + connectionIds.getAndIncrement();
+        nickname = GUEST_PREFIX;
     }
 
 
@@ -62,7 +62,7 @@ public class ChatAnnotation {
         if (message.startsWith("Connect//")){
             nickname=message.substring(9);
             System.out.println(nickname);
-        }else broadcast(nickname+"//:"+message);
+        }else broadcast(message);
     }
 
 
@@ -73,11 +73,33 @@ public class ChatAnnotation {
     }
 
 
-    private static void broadcast(String msg) {
+    private void broadcast(String msg) {
+        String from;
+        String to;
+        String content;
+        String text=msg;
+        if (msg.indexOf("//:") != -1){
+            from=msg.substring(0,msg.indexOf("//:"));
+            msg=msg.substring(msg.indexOf("//:")+3);
+        }else{
+            from="System";
+        }
+        if(msg.indexOf("\\\\:")!=-1){
+            to=msg.substring(0,msg.indexOf("\\\\:"));
+            msg=msg.substring(msg.indexOf("\\\\:")+3);
+        }else{
+            to="all";
+        }
+        content=msg;
+        System.out.println("From:"+from+" To:"+to+" :"+content+"\n"+text);
         for (ChatAnnotation client : connections) {
             try {
                 synchronized (client) {
-                    client.session.getBasicRemote().sendText(msg);
+                    if (from.equals(client.nickname)||to.equals(client.nickname)){
+                        client.session.getBasicRemote().sendText(text);
+                    }else if (from.equals("all")||to.equals("all")){
+                        client.session.getBasicRemote().sendText(text);
+                    }
                 }
             } catch (IOException e) {
                 connections.remove(client);
